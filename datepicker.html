@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>NaHere! :: Company Login</title>
+    <!-- META SECTION -->
+
+    <!-- <script src="https://cdn.rawgit.com/oauth-io/oauth-js/c5af4519/dist/oauth.js"></script> -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-social/4.12.0/bootstrap-social.min.css"> -->
+
+
+    <!-- <link rel="stylesheet" href="http://bootswatch.com/darkly/bootstrap.min.css"> -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-social/4.12.0/bootstrap-social.min.css"> -->
+    <!-- EOF CSS INCLUDE -->
+    <style type="text/css">
+        .button{
+            /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#bfd255+0,8eb92a+28,72aa00+100,9ecb2d+100,72aa00+101 */
+            background: #bfd255; /* Old browsers */
+            background: -moz-linear-gradient(top, #bfd255 0%, #8eb92a 28%, #72aa00 100%, #9ecb2d 100%, #72aa00 101%); /* FF3.6-15 */
+            background: -webkit-linear-gradient(top, #bfd255 0%,#8eb92a 28%,#72aa00 100%,#9ecb2d 100%,#72aa00 101%); /* Chrome10-25,Safari5.1-6 */
+            background: linear-gradient(to bottom, #bfd255 0%,#8eb92a 28%,#72aa00 100%,#9ecb2d 100%,#72aa00 101%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bfd255', endColorstr='#72aa00',GradientType=0 ); /* IE6-9 */
+            }
+
+            #gSignIn{
+              width: 100%;
+            }
+
+            #gSignIn > div{
+              margin: 0 auto;
+            }
+
+    </style>
+
+    <!-- IMPORTANT SCRIPTS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">    
+
+
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+
+    <script>
+      
+    </script>
+
+    <script type="text/javascript">
+        
+        $(document).ready(function(){
+            
+            is_this_a_company();
+            // check_if_session_is_available();
+        
+        });
+
+        function fetch_company_colors(){
+
+            var company_id = localStorage.getItem('company_id');
+
+            $.ajax({
+                
+                type: "POST",
+                dataType: "json",
+                url: api_path+"company/get_company_colours",
+                data: {"company_id": company_id},
+                timeout: 60000,
+
+                success: function(response) {
+                    
+                  
+
+                  if (response.status == '200'){
+
+                      var color = '#2A3F54';
+                      if(response.data.login_btn_color == '' || response.data.login_btn_color == null){
+                        response.data.login_btn_color = color;
+                      }
+
+                   
+                      $('.login_btn').css('background', response.data.login_btn_color);
+                     
+                   
+                  }   
+                    
+                },
+                // objAJAXRequest, strError
+                error: function(response){
+                  
+                  alert('Connection error!');
+                  
+                }        
+
+            });
+        }
+
+        function is_this_a_company(){
+        	
+        	// var pathArray = window.location.href.split('/');
+        	// var username = pathArray[2].split('.')[0];
+
+
+        	var pathArray = window.location.href.split('.');
+        	var username = pathArray[0].replace(/http:\/\//,'');
+        	var username = username.replace(/https:\/\//,'');
+        	
+
+	        $.ajax({
+
+	            type: "POST",
+	            dataType: "json",
+	            cache: false,
+	            url: api_path+"company/get_company_details",
+	            data: { "comp_username" : username },
+	            success: function(response) {
+	                
+	                console.log(response);
+
+	                if (response.status == '200') {
+	                    
+	                    if(response.data.bg_image == ""){
+	                    	response.data.bg_image = "no_backg.png";
+	                    }
+
+	                    if(response.data.company_logo == ""){
+	                    	response.data.company_logo = "default_comp_logo.png";
+	                    }
+	                    
+	                    $("#content").css("background", "url(../files/images/company_login_bg_images/"+response.data.bg_image+")");
+	                    $("#logo_imgg").attr("src", "../files/images/company_images/sml_"+response.data.company_logo);
+
+	                    $("#company_username").val(username);
+	                    $("#company_jo").val(response.data.company_id);
+
+	                    //fetch modules can access
+	                    fetch_module_company_can_access(response.data.company_id);
+	                    check_if_session_is_available();
+                        fetch_company_colors();
+
+	                }else{ 
+
+	                    // $("#content").css("background", "url(/world/assets/images/kweue.jpeg)");
+	                    // $("#logo_imgg").attr("src", "/world/assets/images/darklogo.png" );
+
+	                    alert("Company Page Does not exist");
+
+	                }
+
+	            },
+	            error: function(response){
+	                alert("Technical Error. Please try again.");
+	            }
+
+	        });
+
+        }
+
+
+
+
+        function fetch_module_company_can_access(company_id){
+
+            $.ajax({
+                
+                type: "POST",
+                dataType: "json",
+                url: api_path+"modules/list_of_company_active_modules",
+                data: { "company_id": company_id },
+                timeout: 60000,
+
+                success: function(response) {
+                  console.log(response);
+                  if (response.status == '200'){
+
+                  	var strg = `<option value="">-- Select Application --</option>`;
+                  	$(response.data).each(function(i,v){
+                  		strg += "<option value='"+v.landing_page+"-"+v.module_id+"'>"+v.module_full_name+"</option>";
+					});
+
+					$("#list_of_apps").html(strg);
+
+                     
+                  }else{
+
+                  }
+                    
+                },
+                // objAJAXRequest, strError
+                error: function(response){
+                  
+                  alert('Connection error!');
+                  
+                }        
+
+            });
+
+        }
+
+
+        
+
+
+        function check_if_session_is_available(){
+
+            var user_id = localStorage.getItem('user_id');
+            
+            if(user_id == null){
+
+                localStorage.clear();
+                $('body').show();
+
+            }else if(user_id !== undefined || user_id !== null){
+                
+                window.location = base_url+"/feeds";
+
+            }
+
+			// var user_id = localStorage.getItem('user_id');
+
+			// if(user_id == null){
+
+			// 	localStorage.clear();
+			// 	$('body').show();
+
+			// }else if(user_id !== undefined || user_id !== null){
+				
+			// 	window.location = base_url+"/feeds";
+
+			// }
+
+        }
+    </script>
+     
+    
+</head>
+
+
+
+<body style="display: none;">
+    
+
+    <script>
+            
+        
+        
+    </script>
+
+    <!-- PAGE WRAPPER -->
+    <div class="page">
+        <div class="form-group">
+            <!-- <label>Password</label> -->
+            <select class="form-control required" id="list_of_apps">
+            <option value="">-- Select Application --</option>
+
+                <!-- <option>-- --</option> -->
+            </select>
+        </div>
+    </div>
+
+</html>
